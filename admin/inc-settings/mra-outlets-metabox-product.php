@@ -80,21 +80,29 @@ if (
             jQuery(document).ready(function ($) {
 
                 $(window).on('load', function () {
-                    // Calculate the total stock
-                    let totalStock = 0;
+                    // Find all inputs whose names start with 'outlet_stock'
+                    const outletStockInputs = $("input[name^='outlet_stock']");
 
-                    // Iterate through all inputs with names starting with 'outlet_stock'
-                    $("input[name^='outlet_stock']").each(function () {
-                        const stockValue = parseInt($(this).val(), 10); // Parse the value as an integer
-                        if (!isNaN(stockValue)) {
-                            totalStock += stockValue; // Add to total stock if it's a valid number
-                        }
-                    });
+                    // Check if there are any such inputs on the page
+                    if (outletStockInputs.length > 0) {
+                        let totalStock = 0;
 
-                    // Set the total stock value in the input with class 'wc_input_stock'
-                    $(".wc_input_stock").val(totalStock);
-                    console.log("Total stock calculated and updated:", totalStock); // Debugging log
+                        // Iterate through the found inputs and calculate the total stock
+                        outletStockInputs.each(function () {
+                            const stockValue = parseInt($(this).val(), 10); // Parse value to integer
+                            if (!isNaN(stockValue)) {
+                                totalStock += stockValue; // Add to total if it's a valid number
+                            }
+                        });
+
+                        // Update the total stock in the input with class 'wc_input_stock'
+                        $(".wc_input_stock").val(totalStock);
+                        console.log("Total stock calculated and updated:", totalStock);
+                    } else {
+                        console.log("No outlet_stock inputs found. Stock value remains unchanged.");
+                    }
                 });
+
 
                 // Создаем таблицу
                 let tableHTML = `
