@@ -1,0 +1,6 @@
+#toplevel_page_mr_connect .uip-sub-menu .uip-margin-bottom-xxs:nth-child(1),
+#toplevel_page_mr_connect .uip-sub-menu .uip-margin-bottom-xxs:nth-child(2),
+#toplevel_page_mr_connect .uip-sub-menu .uip-margin-bottom-xxs:nth-child(3),
+#toplevel_page_mr_connect .uip-sub-menu .uip-margin-bottom-xxs:nth-child(4) {
+	display: none !important;
+}

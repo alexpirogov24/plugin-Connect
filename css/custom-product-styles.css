@@ -1,0 +1,41 @@
+/* Скрываем конкретные теги */
+.product_meta .tagged_as a[href*="chattanooga"],
+.product_meta .tagged_as a[href*="Kinseys"],
+.product_meta .tagged_as a[href*="Lipseys"],
+.product_meta .tagged_as a[href*="RSR"],
+.product_meta .tagged_as a[href*="sportssouth"],
+.product_meta .tagged_as a[href*="davidsons"],
+.product_meta .tagged_as a[href*="zanders"] {
+    display: none !important;
+}
+
+/* Убираем запятые перед скрытыми тегами */
+.product_meta .tagged_as a[href*="chattanooga"]::before,
+.product_meta .tagged_as a[href*="Kinseys"]::before,
+.product_meta .tagged_as a[href*="Lipseys"]::before,
+.product_meta .tagged_as a[href*="RSR"]::before,
+.product_meta .tagged_as a[href*="sportssouth"]::before,
+.product_meta .tagged_as a[href*="davidsons"]::before,
+.product_meta .tagged_as a[href*="zanders"]::before {
+    content: none !important;
+}
+
+/* Убираем запятые после скрытых тегов */
+.product_meta .tagged_as a[href*="chattanooga"]::after,
+.product_meta .tagged_as a[href*="Kinseys"]::after,
+.product_meta .tagged_as a[href*="Lipseys"]::after,
+.product_meta .tagged_as a[href*="RSR"]::after,
+.product_meta .tagged_as a[href*="sportssouth"]::after,
+.product_meta .tagged_as a[href*="davidsons"]::after,
+.product_meta .tagged_as a[href*="zanders"]::after {
+    content: none !important;
+}
+
+/* Убираем висящие запятые, если все теги скрыты */
+.product_meta .tagged_as {
+    display: inline-block;
+}
+
+.product_meta .tagged_as:empty {
+    display: none;
+}
