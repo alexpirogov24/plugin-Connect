@@ -2,7 +2,7 @@
 /*
 Plugin Name: Make Ready Connect
 Description: Make Ready Connect
-Version: 1.6.3
+Version: 1.6.4
 Author: MRA
 */
 
@@ -10,7 +10,7 @@ Author: MRA
 if (!defined('WPINC')) die('No access outside of wordpress.');
 
 define('MRA_IMPORT_PSQL_NAME', 'Make Ready Connect');
-define('MRA_IMPORT_PSQL_VERSION', '1.6.3');
+define('MRA_IMPORT_PSQL_VERSION', '1.6.4');
 define('MRA_IMPORT_PSQL_DIR', plugin_dir_path(__FILE__));
 define('MRA_IMPORT_PSQL_URL', plugins_url('/', __FILE__));
 define('MRA_IMPORT_PSQL_BASENAME', plugin_basename(__FILE__));

@@ -687,6 +687,9 @@ function cron_mra_psql_event_func(){
 						if(is_array($outlet_stock_wp)) {
 							foreach ($outlet_stock_wp as $key => $value) {
 								$outlet = get_post($key);
+                                if (!$outlet || !isset($outlet->post_name)) {
+                                    continue;
+                                }
 			    				$slug_outlet = $outlet->post_name;
 			    				if($slug_outlet=='personal-inventory') {
 			    					$isset_p_i_stock['isset'] = true;
@@ -1093,8 +1096,8 @@ function cron_mra_psql_event_func(){
                                 break;
 
                             case 'map_percent':
-                                $price = ($map && $map != 0 && $map !== '') 
-                                    ? $map 
+                                $price = ($map > 0)
+                                    ? $map
                                     : $cog_cost + ($cog_cost * ($percent / 100));
                                 break;
 
