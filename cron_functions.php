@@ -1,5 +1,206 @@
 <?php
 
+// ------ deleting log files older than 5 days -------
+
+function mra_delete_old_log_files() {
+    // Path to the 'logs' folder inside the plugin
+    $logs_dir = MRA_IMPORT_PSQL_DIR . 'logs/';
+
+    // Check if the directory exists
+    if (!is_dir($logs_dir)) {
+        return;
+    }
+
+    // Get all log files matching the pattern
+    $log_files = glob($logs_dir . 'log_cron_update_product_data_*.txt');
+
+    if (!$log_files) {
+        return;
+    }
+
+    $now = time();
+
+    foreach ($log_files as $file_path) {
+        $filename = basename($file_path);
+
+        // Extract date from the filename
+        if (preg_match('/log_cron_update_product_data_(\d{2})_(\d{2})_(\d{2})\.txt/', $filename, $matches)) {
+            $day = (int)$matches[1];
+            $month = (int)$matches[2];
+            $year = (int)$matches[3];
+
+            // Convert 2-digit year to full year (e.g., 25 becomes 2025)
+            $full_year = 2000 + $year;
+
+            // Convert the date to a Unix timestamp
+            $file_time = strtotime("$full_year-$month-$day");
+
+            if ($file_time !== false) {
+                // Calculate the difference in days
+                $days_diff = ($now - $file_time) / (60 * 60 * 24);
+                
+                // Delete the file if older than 5 days
+                if ($days_diff > 5) {
+                    unlink($file_path);
+                }
+            }
+        }
+    }
+}
+
+register_activation_hook(__FILE__, 'mra_schedule_log_cleanup_cron');
+function mra_schedule_log_cleanup_cron() {
+    if (!wp_next_scheduled('mra_daily_log_cleanup_event')) {
+        wp_schedule_event(time(), 'daily', 'mra_daily_log_cleanup_event');
+    }
+}
+
+// Clear scheduled event on plugin deactivation
+register_deactivation_hook(__FILE__, 'mra_clear_log_cleanup_cron');
+function mra_clear_log_cleanup_cron() {
+    wp_clear_scheduled_hook('mra_daily_log_cleanup_event');
+}
+
+add_action('mra_daily_log_cleanup_event', 'mra_delete_old_log_files');
+
+// --- END --- deleting log files older than 5 days -------
+
+
+function apply_custom_markup_or_exclusion($price, $map, $product_id) {
+    // $date_text = date("d_m_y");
+    // if(!file_exists(MRA_IMPORT_PSQL_DIR."logs/log_cron_var_dump_".$date_text.".txt"))
+    //     file_put_contents(MRA_IMPORT_PSQL_DIR."logs/log_cron_var_dump_".$date_text.".txt", '');
+    // $log_file = fopen(MRA_IMPORT_PSQL_DIR."logs/log_cron_var_dump_".$date_text.".txt", "a");
+
+    // Get serialized rules and exclusions from WordPress options
+    $markup_rules_json = get_option('mra_import_psql_custom_markup_rules', '[]');
+    $exclusions_json = get_option('mra_import_psql_markup_exclusions', '[]');
+
+    $markup_rules = json_decode($markup_rules_json, true);
+    $exclusions = json_decode($exclusions_json, true);
+
+    // $text_log = date("Y-m-d H:i:s").": (".$product_id.") - markup_rules - ".print_r($markup_rules, true)." \r\n";
+    // $result_fwrite = fwrite($log_file, $text_log);
+
+    // Get product brand and category
+    $brand_name = '';
+	$product = wc_get_product($product_id);
+	$attributes = $product->get_attributes();
+
+	if (isset($attributes['pa_brand']) && $attributes['pa_brand']->is_taxonomy()) {
+	    $terms = wp_get_post_terms($product_id, 'pa_brand');
+	    if (!empty($terms) && !is_wp_error($terms)) {
+	        $brand_name = $terms[0]->name;
+	    }
+	}
+
+    // $text_log = date("Y-m-d H:i:s").": (".$product_id.") - brand_name - ".print_r($brand_name, true)." \r\n";
+    // $result_fwrite = fwrite($log_file, $text_log);
+
+    $category = get_the_terms($product_id, 'product_cat');
+    $category_name = (!empty($category) && !is_wp_error($category)) ? $category[0]->name : '';
+
+    // $text_log .= date("Y-m-d H:i:s").": (".$product_id.") - category_name - ".print_r($category_name, true)." \r\n";
+    // $result_fwrite = fwrite($log_file, $text_log);
+
+    // Check and apply markup rules
+    $price = floatval($price);
+    foreach ($markup_rules as $rule) {
+    	// $text_log .= date("Y-m-d H:i:s").": (".$product_id.") - markup_rules one rule foreach - ".print_r($rule, true)." \r\n";
+    	// $result_fwrite = fwrite($log_file, $text_log);
+        if (($rule['type'] === 'brand' && $rule['name'] === $brand_name) ||
+            ($rule['type'] === 'category' && $rule['name'] === $category_name)) {
+
+            // Apply the markup rule
+            if ($rule['mode'] === 'percent') {
+                $new_price = $price * (1 + floatval($rule['value']) / 100);
+            } elseif ($rule['mode'] === 'value') {
+                $new_price = $price + floatval($rule['value']);
+            } else {
+                $new_price = $price;
+            }
+
+            // Update product price in database
+            update_post_meta($product_id, '_price', $new_price);
+            update_post_meta($product_id, '_regular_price', $new_price);
+
+            return $new_price;
+        }
+    }
+
+    // Check exclusions
+    foreach ($exclusions as $exclusion) {
+        if (($exclusion['type'] === 'brand' && $exclusion['name'] === $brand_name) ||
+            ($exclusion['type'] === 'category' && $exclusion['name'] === $category_name)) {
+
+            // Use MAP value if excluded
+            update_post_meta($product_id, '_price', $map);
+            update_post_meta($product_id, '_regular_price', $map);
+
+            return $map;
+        }
+    }
+
+    // fclose($log_file);
+
+    // No rules or exclusions matched, return original price
+    return $price;
+}
+
+
+function mra_check_and_add_nfa_tag($product_id) {
+    // Get product categories
+    $terms = get_the_terms($product_id, 'product_cat');
+    if (empty($terms) || is_wp_error($terms)) {
+        return false;
+    }
+
+    $has_nfa = false;
+
+    // Get the excluded category term ID
+    $excluded_term = get_term_by('slug', 'nfa-parts-and-supplies', 'product_cat');
+    $excluded_id = $excluded_term ? $excluded_term->term_id : 0;
+
+    foreach ($terms as $term) {
+        // Skip the excluded category
+        if ($term->term_id == $excluded_id) {
+            continue;
+        }
+
+        // Check the category itself
+        if ($term->slug === 'nfa') {
+            $has_nfa = true;
+            break;
+        }
+
+        // Check ancestors (parent categories)
+        $ancestor_ids = get_ancestors($term->term_id, 'product_cat');
+        if (!empty($ancestor_ids)) {
+            foreach ($ancestor_ids as $ancestor_id) {
+                $ancestor = get_term($ancestor_id, 'product_cat');
+                if ($ancestor && $ancestor->slug === 'nfa') {
+                    $has_nfa = true;
+                    break 2;
+                }
+            }
+        }
+    }
+
+    if ($has_nfa) {
+        // Add the "NFA_Item" tag to the product
+        wp_set_post_terms($product_id, 'NFA_Item', 'product_tag', true);
+        $product = wc_get_product($product_id);
+        $product_name = $product ? $product->get_name() : 'Unknown Product';
+        return 'Tag "NFA_Item" was added to product "' . $product_name . '" (' . $product_id . ')';
+    }
+
+    return false;
+}
+
+
+
+
+
 function add_tags_based_on_pos_outlet($product_id) {
     // // Get the full list of POS outlets from the option
     $pos_outlets = get_option('added_vendor_list');

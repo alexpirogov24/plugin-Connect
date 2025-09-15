@@ -119,6 +119,10 @@ function mra_import_psql_products_func()
                 if ($mra_import_psql_enable_ffl != 'on')
                     $add_sql .= ' AND mc.Firearm = 0';
 
+                $mra_import_psql_enable_nfa_products = get_option('mra_import_psql_enable_nfa_products');
+                if ($mra_import_psql_enable_nfa_products != 'on')
+                    $add_sql .= ' AND (cum.category_id != "188" OR c.parent_id != "188")';
+
                 if(get_option('search_product')) {
                     if (isset($_GET['search']) && $_GET['search']=='send') {
                         $search_arr['title'] = isset($_GET['search_title']) ? $_GET['search_title'] : '';
@@ -243,6 +247,12 @@ function mra_import_psql_products_func()
                         $sql_vend_is_not_nul = "AND (ium.vendor = '".$row_vendor['vendor']."' OR ium.vendor IS NOT NULL)";
                     }
 
+                    if (get_option('mra_import_psql_hide_out_of_catalog_connect') == 'on') {
+                        $cost_quantity = " AND cm.cost != 0 AND im.quantity != 0";
+                    } else {
+                        $cost_quantity = "";
+                    }
+
                     $result = $mysqli_read->query("SELECT 
                         mc.*, 
                         cm.*, 
@@ -258,10 +268,9 @@ function mra_import_psql_products_func()
                     LEFT JOIN category_upc_mapping cum ON mc.UPC = cum.upc
                     LEFT JOIN image_upc_mapping ium ON mc.UPC = ium.`UPC`
                     LEFT JOIN categories c ON cum.category_id = c.id 
-                    WHERE cm.vendorid = ".$row_vendor['id']."
-                      AND cm.cost != 0
+                    WHERE cm.vendorid = ".$row_vendor['id'].$cost_quantity."
                       AND im.vendorid = ".$row_vendor['id'].$add_sql."
-                      AND im.quantity != 0 ".$sql_vend_is_not_nul."
+                    ".$sql_vend_is_not_nul."
                       AND NOT EXISTS (
                         SELECT upc
                         FROM added_products ap
@@ -286,10 +295,9 @@ function mra_import_psql_products_func()
                     // LEFT JOIN category_upc_mapping cum ON mc.UPC = cum.upc
                     // LEFT JOIN image_upc_mapping ium ON mc.UPC = ium.`UPC`
                     // LEFT JOIN categories c ON cum.category_id = c.id 
-                    // WHERE cm.vendorid = ".$row_vendor['id']."
-                    //   AND cm.cost != 0
+                    // WHERE cm.vendorid = ".$row_vendor['id'].$cost_quantity."
                     //   AND im.vendorid = ".$row_vendor['id'].$add_sql."
-                    //   AND im.quantity != 0 ".$sql_vend_is_not_nul."
+                    // ".$sql_vend_is_not_nul."
                     //   AND NOT EXISTS (
                     //     SELECT upc
                     //     FROM added_products ap
@@ -321,6 +329,12 @@ function mra_import_psql_products_func()
                     //     )
                     // ".$pages);
 
+                    if (get_option('mra_import_psql_hide_out_of_catalog_connect') == 'on') {
+                        $cost_quantity2 = " AND cm.cost != 0 AND im.quantity != 0";
+                    } else {
+                        $cost_quantity2 = "";
+                    }
+
                     $result = $mysqli_read->query("SELECT 
                         mc.*, 
                         cm.*, 
@@ -336,10 +350,8 @@ function mra_import_psql_products_func()
                     LEFT JOIN category_upc_mapping cum ON mc.UPC = cum.upc
                     LEFT JOIN image_upc_mapping ium ON mc.UPC = ium.`UPC`
                     LEFT JOIN categories c ON cum.category_id = c.id
-                    WHERE cm.vendorid = 5
-                      AND cm.cost != 0
+                    WHERE cm.vendorid = 5".$cost_quantity2."
                       AND im.vendorid = 5".$add_sql."
-                      AND im.quantity != 0
                       AND (ium.vendor = 'davidsons' OR ium.vendor IS NOT NULL)
                       AND NOT EXISTS (
                         SELECT upc

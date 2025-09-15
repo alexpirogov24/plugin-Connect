@@ -145,6 +145,15 @@ function renderCategoryOptions($categories, $selectedId = null, $prefix = '') {
     $html = '';
 
     foreach ($categories as $category) {
+        
+        $mra_import_psql_enable_nfa_products = get_option('mra_import_psql_enable_nfa_products');
+        if ($mra_import_psql_enable_nfa_products != 'on') {
+            $excludedCategoryIds = [116, 117, 118, 119, 188];
+            if (in_array($category['id'], $excludedCategoryIds)) {
+                continue;
+            }
+        }
+
         $isSelected = $category['id'] == $selectedId ? ' selected' : '';
         $html .= '<option value="' . $category['id'] . '" data-name="' . htmlspecialchars($category['name']) . '"' . $isSelected . '>' . $prefix . htmlspecialchars($category['name']) . '</option>';
 
@@ -249,11 +258,15 @@ function renderCategoryOptions($categories, $selectedId = null, $prefix = '') {
             <input type="checkbox" id="filter_has_image" name="filter_has_image" <?= $checked ?> />
             <label for="filter_has_image">Has image</label>
         </div>
+
+        <?php if (get_option('mra_import_psql_enable_attribute_checking') != 'on') { ?>
         <div class="filter_checkbox block_curr_in_stock">
             <?php if(isset($filter_arr['curr_in_stock']) && $filter_arr['curr_in_stock']=='true') $checked="checked"; else $checked=""; ?>
             <input type="checkbox" id="filter_curr_in_stock" name="filter_curr_in_stock" <?= $checked ?> />
             <label for="filter_curr_in_stock">Currently in-Stock</label>
         </div>
+        <?php } ?>
+
         <select id="filter_select_category" class="select_category" name="filter_select_category">
             <option value="not_selected" data-name="not_selected">Сategory</option>
 

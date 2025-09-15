@@ -29,6 +29,12 @@ function mra_import_psql_price_edit_func() {
             .radio_select {
                 margin: 5px 0;
             }
+            #markup_rules_table select.rule-name {
+                max-width: 100%;
+            }
+            #exclusions_table select.ex-name {
+                max-width: 100%;
+            }
         </style>
         <div class='wrap'>
             <h1>Markup Settings</h1>
@@ -46,10 +52,64 @@ function mra_import_psql_price_edit_func() {
                 <?php
                 settings_fields('mra_import_psql_price_edit_fields');
                 do_settings_sections('mra_import_psql_price_edit_options');
+
+                /* $markup_rules_json = get_option('mra_import_psql_custom_markup_rules');
+                $exclusions_json = get_option('mra_import_psql_markup_exclusions');
+
+                $markup_rules = json_decode($markup_rules_json, true);
+                $exclusions = json_decode($exclusions_json, true);
                 ?>
+
+                <h2>Custom Markup Rules</h2>
+                <table class="wp-list-table widefat fixed striped" id="markup_rules_table">
+                    <thead>
+                        <tr>
+                            <th>Type</th><th>Name</th><th>Mode</th><th>Value</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($markup_rules) && is_array($markup_rules)): ?>
+                            <?php foreach ($markup_rules as $rule): ?>
+                                <tr>
+                                    <td><?= esc_html($rule['type']) ?></td>
+                                    <td><?= esc_html($rule['name']) ?></td>
+                                    <td><?= esc_html($rule['mode']) ?></td>
+                                    <td><?= esc_html($rule['value']) ?></td>
+                                    <td><button type="button" class="button remove-rule">Remove</button></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <button type="button" class="button" id="add_rule_btn">Add Rule</button>
+                <input type="hidden" name="mra_import_psql_custom_markup_rules" id="mra_import_psql_custom_markup_rules" value="<?= esc_attr($markup_rules_json) ?>">
+
+                <h2>Exclusions</h2>
+                <table class="wp-list-table widefat fixed striped" id="exclusions_table">
+                    <thead>
+                        <tr>
+                            <th>Type</th><th>Name</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($exclusions) && is_array($exclusions)): ?>
+                            <?php foreach ($exclusions as $excl): ?>
+                                <tr>
+                                    <td><?= esc_html($excl['type']) ?></td>
+                                    <td><?= esc_html($excl['name']) ?></td>
+                                    <td><button type="button" class="button remove-exclusion">Remove</button></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <button type="button" class="button" id="add_exclusion_btn">Add Exclusion</button>
+                <input type="hidden" name="mra_import_psql_markup_exclusions" id="mra_import_psql_markup_exclusions" value="<?= esc_attr($exclusions_json) ?>"> <?php */ ?>
+
+                <br><br>
                 <input type='submit' name='Submit' class='button button-primary' value='Save Changes'>
-                
             </form>
+
         </div>    
         <?php
 
@@ -75,6 +135,165 @@ function mra_import_psql_price_edit_func() {
                 $('#update_price_btn').attr('class', 'no_active');
                 $('.update_price_btn_text').show();
             });
+
+            function renderMarkupRules() {
+                const rules = JSON.parse($('#mra_import_psql_custom_markup_rules').val() || '[]');
+                const $rules = $('#markup_rules_table tbody').empty();
+
+                rules.forEach((rule, index) => {
+                    const options = (rule.type === 'brand' ? mra_import_psql_data.brands : mra_import_psql_data.categories)
+                        .map(name => `<option value="${name}" ${rule.name === name ? 'selected' : ''}>${name}</option>`).join('');
+
+                    $rules.append(`
+                        <tr data-index="${index}">
+                            <td>
+                                <select class="rule-type">
+                                    <option value="brand"${rule.type === 'brand' ? ' selected' : ''}>Brand</option>
+                                    <option value="category"${rule.type === 'category' ? ' selected' : ''}>Category</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="rule-name">${options}</select>
+                            </td>
+                            <td>
+                                <select class="rule-mode">
+                                    <option value="percent"${rule.mode === 'percent' ? ' selected' : ''}>%</option>
+                                    <option value="value"${rule.mode === 'value' ? ' selected' : ''}>$</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="rule-value" value="${rule.value || ''}"></td>
+                            <td><button type="button" class="button remove-rule">Remove</button></td>
+                        </tr>
+                    `);
+                });
+
+                updateMarkupRulesInput();
+            }
+
+            function renderExclusions() {
+                const exclusions = JSON.parse($('#mra_import_psql_markup_exclusions').val() || '[]');
+                const $ex = $('#exclusions_table tbody').empty();
+
+                exclusions.forEach((ex, index) => {
+                    const options = (ex.type === 'brand' ? mra_import_psql_data.brands : mra_import_psql_data.categories)
+                        .map(name => `<option value="${name}" ${ex.name === name ? 'selected' : ''}>${name}</option>`).join('');
+
+                    $ex.append(`
+                        <tr data-index="${index}">
+                            <td>
+                                <select class="ex-type">
+                                    <option value="brand"${ex.type === 'brand' ? ' selected' : ''}>Brand</option>
+                                    <option value="category"${ex.type === 'category' ? ' selected' : ''}>Category</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="ex-name">${options}</select>
+                            </td>
+                            <td><button type="button" class="button remove-ex">Remove</button></td>
+                        </tr>
+                    `);
+                });
+
+                updateExclusionsInput();
+            }
+
+            function updateMarkupRulesInput() {
+                const rules = [];
+                $('#markup_rules_table tbody tr').each(function () {
+                    rules.push({
+                        type: $(this).find('.rule-type').val(),
+                        name: $(this).find('.rule-name').val(),
+                        mode: $(this).find('.rule-mode').val(),
+                        value: $(this).find('.rule-value').val(),
+                    });
+                });
+                $('#mra_import_psql_custom_markup_rules').val(JSON.stringify(rules));
+            }
+
+            function updateExclusionsInput() {
+                const exclusions = [];
+                $('#exclusions_table tbody tr').each(function () {
+                    exclusions.push({
+                        type: $(this).find('.ex-type').val(),
+                        name: $(this).find('.ex-name').val(),
+                    });
+                });
+                $('#mra_import_psql_markup_exclusions').val(JSON.stringify(exclusions));
+            }
+
+            // Add buttons
+            $('#add_rule_btn').on('click', function () {
+                const rules = JSON.parse($('#mra_import_psql_custom_markup_rules').val() || '[]');
+                rules.push({ type: 'brand', name: '', mode: 'percent', value: '' });
+                $('#mra_import_psql_custom_markup_rules').val(JSON.stringify(rules));
+                renderMarkupRules();
+            });
+
+            $('#add_exclusion_btn').on('click', function () {
+                const exclusions = JSON.parse($('#mra_import_psql_markup_exclusions').val() || '[]');
+                exclusions.push({ type: 'brand', name: '' });
+                $('#mra_import_psql_markup_exclusions').val(JSON.stringify(exclusions));
+                renderExclusions();
+            });
+
+            // Input listeners
+            $(document).on('change input', '.rule-type, .rule-name, .rule-mode, .rule-value', updateMarkupRulesInput);
+            $(document).on('change input', '.ex-type, .ex-name', updateExclusionsInput);
+
+            // Remove buttons
+            $(document).on('click', '.remove-rule', function () {
+                const index = $(this).closest('tr').data('index');
+                const rules = JSON.parse($('#mra_import_psql_custom_markup_rules').val());
+                rules.splice(index, 1);
+                $('#mra_import_psql_custom_markup_rules').val(JSON.stringify(rules));
+                renderMarkupRules();
+            });
+
+            $(document).on('click', '.remove-ex', function () {
+                const index = $(this).closest('tr').data('index');
+                const exclusions = JSON.parse($('#mra_import_psql_markup_exclusions').val());
+                exclusions.splice(index, 1);
+                $('#mra_import_psql_markup_exclusions').val(JSON.stringify(exclusions));
+                renderExclusions();
+            });
+
+            renderMarkupRules();
+
+            // Обновление списка названий при смене типа
+            function updateRuleNameOptions($row, type, selectedName) {
+                const list = type === 'brand' ? mra_import_psql_data.brands : mra_import_psql_data.categories;
+                const options = list.map(name => `<option value="${name}" ${name === selectedName ? 'selected' : ''}>${name}</option>`).join('');
+                $row.find('.rule-name').html(options);
+            }
+
+            function updateExclusionNameOptions($row, type, selectedName) {
+                const list = type === 'brand' ? mra_import_psql_data.brands : mra_import_psql_data.categories;
+                const options = list.map(name => `<option value="${name}" ${name === selectedName ? 'selected' : ''}>${name}</option>`).join('');
+                $row.find('.ex-name').html(options);
+            }
+
+            $(document).on('change', '.rule-type', function () {
+                const $row = $(this).closest('tr');
+                const type = $(this).val();
+                updateRuleNameOptions($row, type, '');
+                updateMarkupRulesInput();
+            });
+
+            $(document).on('change', '.ex-type', function () {
+                const $row = $(this).closest('tr');
+                const type = $(this).val();
+                updateExclusionNameOptions($row, type, '');
+                updateExclusionsInput();
+            });
+
+            renderExclusions();
+
+
+             $('form').on('submit', function () {
+                updateMarkupRulesInput();
+                updateExclusionsInput();
+            });               
+
         });
         </script>
 
@@ -139,6 +358,18 @@ function mra_import_psql_price_edit_init()
         )
     );
 
+    register_setting(
+        'mra_import_psql_price_edit_fields',
+        'mra_import_psql_custom_markup_rules',
+        ['type' => 'string']
+    );
+
+    register_setting(
+        'mra_import_psql_price_edit_fields',
+        'mra_import_psql_markup_exclusions',
+        ['type' => 'string']
+    );
+
 
     add_settings_field(
         'mra_import_psql_enable_auto_price_edit',
@@ -170,7 +401,7 @@ function mra_import_psql_price_edit_init()
 
     add_settings_field(
         'mra_import_psql_hide_out_of_stock',
-        'Hide out of stock items from the catalog',
+        'Hide out-of-stock items from the frontend catalog',
         'mra_import_psql_hide_out_of_stock_input',
         'mra_import_psql_price_edit_options',
     );
@@ -268,3 +499,28 @@ function mra_import_psql_hide_out_of_stock_input()
 
     echo '<input type="checkbox" id="mra_import_psql_hide_out_of_stock" name="mra_import_psql_hide_out_of_stock" '.$checked.'>';
 }
+
+
+
+
+
+function mra_import_get_all_brands() {
+    $brands = get_terms(['taxonomy' => 'pa_brand', 'hide_empty' => false]);
+    return array_map(function($term) {
+        return $term->name;
+    }, $brands);
+}
+
+function mra_import_get_all_categories() {
+    $categories = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false]);
+    return array_map(function($term) {
+        return $term->name;
+    }, $categories);
+}
+
+add_action('admin_enqueue_scripts', function() {
+    wp_localize_script('jquery', 'mra_import_psql_data', [
+        'brands' => mra_import_get_all_brands(),
+        'categories' => mra_import_get_all_categories()
+    ]);
+});

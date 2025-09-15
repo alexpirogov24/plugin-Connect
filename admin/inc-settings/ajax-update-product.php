@@ -282,7 +282,7 @@ function mrapgupdate_func(){
             if ($result) {
 
             } else {
-                echo "Failed to add external image.";
+                echo "";
             }
 
         } else {

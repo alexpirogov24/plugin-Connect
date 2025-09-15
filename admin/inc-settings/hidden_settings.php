@@ -96,7 +96,23 @@ function mra_import_psql_hidd_sett_init()
 
     register_setting(
         'mra_import_psql_hidden_settins_fields',
+        'mra_import_psql_enable_nfa_products',
+        array(
+            'type' => 'string',
+        )
+    );
+
+    register_setting(
+        'mra_import_psql_hidden_settins_fields',
         'mra_import_psql_enable_rsr',
+        array(
+            'type' => 'string',
+        )
+    );
+
+    register_setting(
+        'mra_import_psql_hidden_settins_fields',
+        'mra_import_psql_enable_nfa',
         array(
             'type' => 'string',
         )
@@ -113,6 +129,14 @@ function mra_import_psql_hidd_sett_init()
     register_setting(
         'mra_import_psql_hidden_settins_fields',
         'mra_import_psql_enable_attribute_checking',
+        array(
+            'type' => 'string',
+        )
+    );
+
+    register_setting(
+        'mra_import_psql_hidden_settins_fields',
+        'mra_import_psql_hide_out_of_catalog_connect',
         array(
             'type' => 'string',
         )
@@ -135,9 +159,23 @@ function mra_import_psql_hidd_sett_init()
     );
 
     add_settings_field(
+        'mra_import_psql_enable_nfa_products',
+        'Enable the display of NFA products',
+        'mra_import_psql_enable_nfa_products_input',
+        'mra_import_psql_hidd_sett_options',
+    );
+
+    add_settings_field(
         'mra_import_psql_enable_rsr',
         'Enable RSR firearms',
         'mra_import_psql_enable_rsr_input',
+        'mra_import_psql_hidd_sett_options',
+    );
+
+    add_settings_field(
+        'mra_import_psql_enable_nfa',
+        'Enable NFA Items tag',
+        'mra_import_psql_enable_nfa_input',
         'mra_import_psql_hidd_sett_options',
     );
 
@@ -152,6 +190,13 @@ function mra_import_psql_hidd_sett_init()
         'mra_import_psql_enable_attribute_checking',
         'Enable attribute checking',
         'mra_import_psql_enable_attribute_checking_input',
+        'mra_import_psql_hidd_sett_options',
+    );
+
+    add_settings_field(
+        'mra_import_psql_hide_out_of_catalog_connect',
+        'Hide missing items from the Connect product catalog',
+        'mra_import_psql_hide_out_of_catalog_connect_input',
         'mra_import_psql_hidd_sett_options',
     );
 
@@ -174,6 +219,17 @@ function mra_import_psql_enable_ffl_input()
     echo '<input type="checkbox" id="mra_import_psql_enable_ffl" name="mra_import_psql_enable_ffl" '.$checked.'>';
 }
 
+function mra_import_psql_enable_nfa_products_input()
+{
+    $mra_import_psql_enable_nfa_products = get_option('mra_import_psql_enable_nfa_products');
+    if ($mra_import_psql_enable_nfa_products == 'on')
+        $checked = 'checked';
+    else
+        $checked = '';
+
+    echo '<input type="checkbox" id="mra_import_psql_enable_nfa_products" name="mra_import_psql_enable_nfa_products" '.$checked.'>';
+}
+
 function mra_import_psql_enable_rsr_input()
 {
     $mra_import_psql_enable_rsr = get_option('mra_import_psql_enable_rsr');
@@ -183,6 +239,17 @@ function mra_import_psql_enable_rsr_input()
         $checked = '';
 
     echo '<input type="checkbox" id="mra_import_psql_enable_rsr" name="mra_import_psql_enable_rsr" '.$checked.'>';
+}
+
+function mra_import_psql_enable_nfa_input()
+{
+    $mra_import_psql_enable_nfa = get_option('mra_import_psql_enable_nfa');
+    if ($mra_import_psql_enable_nfa == 'on')
+        $checked = 'checked';
+    else
+        $checked = '';
+
+    echo '<input type="checkbox" id="mra_import_psql_enable_nfa" name="mra_import_psql_enable_nfa" '.$checked.'>';
 }
 
 function mra_import_psql_enable_default_outlet_input()
@@ -205,6 +272,17 @@ function mra_import_psql_enable_attribute_checking_input()
         $checked = '';
 
     echo '<input type="checkbox" id="mra_import_psql_enable_attribute_checking" name="mra_import_psql_enable_attribute_checking" '.$checked.'>';
+}
+
+function mra_import_psql_hide_out_of_catalog_connect_input()
+{
+    $mra_import_psql_hide_out_of_catalog_connect = get_option('mra_import_psql_hide_out_of_catalog_connect');
+    if ($mra_import_psql_hide_out_of_catalog_connect == 'on')
+        $checked = 'checked';
+    else
+        $checked = '';
+
+    echo '<input type="checkbox" id="mra_import_psql_hide_out_of_catalog_connect" name="mra_import_psql_hide_out_of_catalog_connect" '.$checked.'>';
 }
 
 function mra_import_psql_cron_time_input()
